@@ -1,0 +1,6 @@
+{
+  "name": "Couple Planner",
+  "description": "Membantu pasangan mencatat rencana kegiatan bersama, dokumentasi kenangan romantis, dan mencatat pengeluaran setiap kegiatan secara mandiri.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
