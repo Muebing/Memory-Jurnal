@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.Dokumentasi
 import com.example.data.Kegiatan
 import com.example.ui.theme.SlateDark
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,6 +190,8 @@ fun ScrapbookCard(
     onDeleteMemory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isCustomImage = memory.imageUri != null && !listOf("coffee", "dinner", "movie", "travel").contains(memory.imageUri)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -204,72 +207,99 @@ fun ScrapbookCard(
                 "coffee" -> Triple("☕", Color(0xFF8D6E63), "Coffee Date")
                 "dinner" -> Triple("🍔", Color(0xFFFDD835), "Romantic Dinner")
                 "movie" -> Triple("🎬", Color(0xFF7E57C2), "Cinema Night")
-                else -> Triple("🌴", Color(0xFF26A69A), "Cozy Trip")
+                "travel" -> Triple("🌴", Color(0xFF26A69A), "Cozy Trip")
+                else -> Triple("📸", MaterialTheme.colorScheme.primary, "Koleksi Foto")
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                presetBgColor.copy(alpha = 0.8f),
-                                presetBgColor.copy(alpha = 0.4f)
-                            )
-                        )
-                    )
-                    .padding(16.dp)
             ) {
-                // Heart shape overlay background
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.15f),
-                    modifier = Modifier
-                        .size(120.dp)
-                        .align(Alignment.CenterEnd)
-                )
-
-                Column(modifier = Modifier.align(Alignment.BottomStart)) {
-                    Surface(
-                        color = Color.White.copy(alpha = 0.9f),
-                        shape = CircleShape
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(text = presetEmoji, fontSize = 12.sp)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = presetLabel, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = SlateDark))
-                        }
+                if (isCustomImage && memory.imageUri != null) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        coil.compose.AsyncImage(
+                            model = memory.imageUri,
+                            contentDescription = "Foto Kenangan",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.40f))
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = linkedPlan?.judul ?: "Rencana kencan bersama",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.White),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        presetBgColor.copy(alpha = 0.8f),
+                                        presetBgColor.copy(alpha = 0.4f)
+                                    )
+                                )
+                            )
                     )
                 }
 
-                // Star badge top right corners
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiary,
-                    contentColor = SlateDark,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.align(Alignment.TopEnd)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Heart shape overlay background
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.15f),
+                        modifier = Modifier
+                            .size(120.dp)
+                            .align(Alignment.CenterEnd)
+                    )
+
+                    Column(modifier = Modifier.align(Alignment.BottomStart)) {
+                        Surface(
+                            color = Color.White.copy(alpha = 0.9f),
+                            shape = CircleShape
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(text = presetEmoji, fontSize = 12.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = presetLabel, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = SlateDark))
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = linkedPlan?.judul ?: "Rencana kencan bersama",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.White),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Star badge top right corners
+                    Surface(
+                        color = MaterialTheme.colorScheme.tertiary,
+                        contentColor = SlateDark,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.align(Alignment.TopEnd)
                     ) {
-                        Icon(imageVector = Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(text = "${memory.rating}.0", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(text = "${memory.rating}.0", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                        }
                     }
                 }
             }

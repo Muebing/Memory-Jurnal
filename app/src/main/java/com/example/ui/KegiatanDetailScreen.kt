@@ -31,6 +31,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.Biaya
 import com.example.data.Dokumentasi
 import com.example.data.Kegiatan
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.layout.ContentScale
+import android.net.Uri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -447,6 +452,7 @@ fun KegiatanDetailScreen(
         var captionText by remember { mutableStateOf("") }
         var starRating by remember { mutableStateOf(5) }
         var imageSelectedPreset by remember { mutableStateOf("coffee") }
+        var customImageUri by remember { mutableStateOf<String?>(null) }
         var isFormError by remember { mutableStateOf(false) }
 
         val imagePresets = listOf(
@@ -456,9 +462,17 @@ fun KegiatanDetailScreen(
             PresetItem("travel", "🌴 Cozy Trip", "ic_love_travel")
         )
 
+        val galleryLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            uri?.let {
+                customImageUri = it.toString()
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showAddDokumentasiDialog = false },
-            title = { Text("Simpan Kenangan Indah") },
+            title = { Text("Simpan Kenangan Indah ") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -497,24 +511,76 @@ fun KegiatanDetailScreen(
                         modifier = Modifier.fillMaxWidth().testTag("add_memory_caption")
                     )
 
+                    // PHOTO SELECTOR
+                    Text("Foto Kenangan Kita:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    if (customImageUri != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            coil.compose.AsyncImage(
+                                model = customImageUri,
+                                contentDescription = "Preview Foto",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            IconButton(
+                                onClick = { customImageUri = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                    .size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Hapus Foto", tint = Color.White, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { galleryLauncher.launch("image/*") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .testTag("upload_photo_button"),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Unggah Foto dari Galeri", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            }
+                        }
+                    }
+
+                    Text("Atau gunakan Ilustrasi Estetika:", style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)))
+
                     // PRESET ILLUS SELECTOR
-                    Text("Pilih Estetika Ilustrasi Dokumentasi:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         imagePresets.forEach { preset ->
-                            val select = imageSelectedPreset == preset.id
+                            val select = imageSelectedPreset == preset.id && customImageUri == null
                             Card(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .clickable { imageSelectedPreset = preset.id }
+                                    .clickable { 
+                                        imageSelectedPreset = preset.id
+                                        customImageUri = null
+                                    }
                                     .testTag("preset_${preset.id}"),
                                 shape = RoundedCornerShape(8.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (select) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
-                                    contentColor = if (select) Color.White else MaterialTheme.colorScheme.secondary
+                                    containerColor = if (select) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
+                                    contentColor = if (select) Color.White else MaterialTheme.colorScheme.primary
                                 )
                             ) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -535,7 +601,7 @@ fun KegiatanDetailScreen(
                                 kegiatanId = plan.id,
                                 story = captionText,
                                 rating = starRating,
-                                imageUri = imageSelectedPreset // Persisting chosen preset name as image path
+                                imageUri = customImageUri ?: imageSelectedPreset
                             )
                             showAddDokumentasiDialog = false
                         }
@@ -791,6 +857,8 @@ fun MemoryItemRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isCustomImage = memory.imageUri != null && !listOf("coffee", "dinner", "movie", "travel").contains(memory.imageUri)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -809,7 +877,8 @@ fun MemoryItemRow(
                     "coffee" -> Pair("☕", Color(0xFF8D6E63))
                     "dinner" -> Pair("🍔", Color(0xFFFDD835))
                     "movie" -> Pair("🎬", Color(0xFF7E57C2))
-                    else -> Pair("🌴", Color(0xFF26A69A))
+                    "travel" -> Pair("🌴", Color(0xFF26A69A))
+                    else -> Pair("📸", MaterialTheme.colorScheme.primary)
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -858,6 +927,23 @@ fun MemoryItemRow(
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
             )
+
+            if (isCustomImage && memory.imageUri != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                ) {
+                    coil.compose.AsyncImage(
+                        model = memory.imageUri,
+                        contentDescription = "Foto Kenangan",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }

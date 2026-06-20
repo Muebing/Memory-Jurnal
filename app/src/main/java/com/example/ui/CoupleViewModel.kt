@@ -225,23 +225,22 @@ class CoupleViewModel(application: Application, private val repository: CoupleRe
         val userPaid = list.filter { it.pembayar.equals(currentUserName, ignoreCase = true) || it.pembayar.equals("Samuel", ignoreCase = true) || it.pembayar.equals("Saya", ignoreCase = true) }.sumOf { it.nominal }
         val partnerPaid = list.filter { it.pembayar.equals(partnerName, ignoreCase = true) || it.pembayar.equals("Pasangan", ignoreCase = true) }.sumOf { it.nominal }
 
-        val share = total / 2.0
         val diffName: String
         val diffAmount: Double
         val debtStatusMessage: String
 
         if (userPaid > partnerPaid) {
             diffName = currentUserName
-            diffAmount = (userPaid - partnerPaid) / 2.0
-            debtStatusMessage = "$partnerName berhutang sebesar Rp${formatThousand(diffAmount)} kepada $currentUserName"
+            diffAmount = userPaid - partnerPaid
+            debtStatusMessage = "$currentUserName berkontribusi Rp${formatThousand(diffAmount)} lebih banyak untuk momen romantis ini."
         } else if (partnerPaid > userPaid) {
             diffName = partnerName
-            diffAmount = (partnerPaid - userPaid) / 2.0
-            debtStatusMessage = "$currentUserName berhutang sebesar Rp${formatThousand(diffAmount)} kepada $partnerName"
+            diffAmount = partnerPaid - userPaid
+            debtStatusMessage = "$partnerName berkontribusi Rp${formatThousand(diffAmount)} lebih banyak untuk momen romantis ini."
         } else {
             diffName = "Seimbang"
             diffAmount = 0.0
-            debtStatusMessage = "Pengeluaran seimbang! Tidak ada yang saling berhutang."
+            debtStatusMessage = "Kontribusi kita seimbang! Masing-masing membayar Rp${formatThousand(userPaid)}."
         }
 
         return ExpensesSummary(
